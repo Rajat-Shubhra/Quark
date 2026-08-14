@@ -1,0 +1,17 @@
+{
+  "name": "quark",
+  "private": true,
+  "workspaces": [
+    "web",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,server -c blue,green \"node web/dev.mjs\" \"npm run dev -w server\"",
+    "dev:web": "node web/dev.mjs",
+    "dev:server": "npm run dev -w server",
+    "build": "npm run build -w web && npm run build -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

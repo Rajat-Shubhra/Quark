@@ -32,10 +32,20 @@ The root `.env` is shared by both workspaces. Only `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` are injected into the browser bundle (see `web/vite.config.ts`);
 the service-role and Gemini keys are never referenced client-side.
 
+## Auth
+
+Email + password via Supabase Auth. The session is persisted by `supabase-js` and
+restored on load, so a reload — or a visit from another device — stays signed in.
+
+By default Supabase requires users to **confirm their email** before they can log in,
+so sign-up shows a "check your inbox" notice rather than signing you straight in.
+To turn that off while developing solo: Supabase dashboard → Authentication →
+Providers → Email → disable "Confirm email".
+
 ## Milestones
 
 - [x] 1. Scaffold + Supabase connection
-- [ ] 2. Auth (email sign-up / log-in)
+- [x] 2. Auth (email sign-up / log-in)
 - [ ] 3. Data model + Kanban board (RLS)
 - [ ] 4. BlockNote notes attached to tasks
 - [ ] 5. Agent end-to-end with one action (`write_note`) + confirmation gate

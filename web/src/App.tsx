@@ -1,68 +1,48 @@
-import { useEffect, useState } from 'react'
-import { supabase, supabaseUrl } from './lib/supabase'
+import type { Session } from '@supabase/supabase-js'
+import { supabase } from './lib/supabase'
+import { useAuth } from './features/auth/useAuth'
+import { AuthForm } from './features/auth/AuthForm'
+import { ConnectionStatus } from './components/ConnectionStatus'
 
-type CheckState = 'checking' | 'ok' | 'fail'
-
-function StatusRow({ label, state, detail }: { label: string; state: CheckState; detail?: string }) {
-  const icon = state === 'checking' ? '…' : state === 'ok' ? '✓' : '✗'
+function Workspace({ session }: { session: Session }) {
   return (
-    <li className={`status ${state}`}>
-      <span className="icon">{icon}</span>
-      <span>{label}</span>
-      {detail && <span className="detail">{detail}</span>}
-    </li>
+    <main>
+      <header className="topbar">
+        <div>
+          <h1>Quark</h1>
+          <p className="tagline">Notes + Kanban + a capability-aware task agent.</p>
+        </div>
+        <div className="account">
+          <span className="email">{session.user.email}</span>
+          <button type="button" onClick={() => supabase.auth.signOut()}>
+            Log out
+          </button>
+        </div>
+      </header>
+
+      <section>
+        <h2>Milestone 2 — signed in</h2>
+        <p className="muted">
+          Your session persists across reloads and devices. Next: the tasks and notes tables with
+          row-level security, then the Kanban board.
+        </p>
+        <ConnectionStatus />
+      </section>
+    </main>
   )
 }
 
 export default function App() {
-  const [supabaseState, setSupabaseState] = useState<CheckState>('checking')
-  const [supabaseDetail, setSupabaseDetail] = useState<string>()
-  const [serverState, setServerState] = useState<CheckState>('checking')
-  const [serverDetail, setServerDetail] = useState<string>()
+  const { session, loading } = useAuth()
 
-  useEffect(() => {
-    if (!supabaseUrl) {
-      setSupabaseState('fail')
-      setSupabaseDetail('SUPABASE_URL missing from .env')
-      return
-    }
-    // Auth health endpoint works before any tables exist.
-    supabase.auth
-      .getSession()
-      .then(() => fetch(`${supabaseUrl}/auth/v1/health`, { headers: { apikey: __SUPABASE_ANON_KEY__ } }))
-      .then((res) => {
-        setSupabaseState(res.ok ? 'ok' : 'fail')
-        if (!res.ok) setSupabaseDetail(`HTTP ${res.status}`)
-      })
-      .catch((err) => {
-        setSupabaseState('fail')
-        setSupabaseDetail(String(err))
-      })
-  }, [])
+  // Avoid flashing the login form while the persisted session is restored.
+  if (loading) {
+    return (
+      <main>
+        <p className="muted">Loading…</p>
+      </main>
+    )
+  }
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((body: { ok: boolean; supabase: string }) => {
-        setServerState(body.ok ? 'ok' : 'fail')
-        setServerDetail(`supabase from server: ${body.supabase}`)
-      })
-      .catch((err) => {
-        setServerState('fail')
-        setServerDetail(String(err))
-      })
-  }, [])
-
-  return (
-    <main>
-      <h1>Quark</h1>
-      <p className="tagline">Notes + Kanban + a capability-aware task agent.</p>
-      <h2>Milestone 1 — walking skeleton</h2>
-      <ul>
-        <StatusRow label="Supabase reachable from browser" state={supabaseState} detail={supabaseDetail} />
-        <StatusRow label="Agent server reachable (/api/health)" state={serverState} detail={serverDetail} />
-      </ul>
-      <p className="next">Next up: auth, board, notes, agent.</p>
-    </main>
-  )
+  return session ? <Workspace session={session} /> : <AuthForm />
 }

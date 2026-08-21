@@ -25,7 +25,11 @@ confirmation for side-effecting actions is enforced **in server code**, not by t
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase
      dashboard → Project Settings → API. The service-role key is **server-only**.
    - `GEMINI_API_KEY` — https://aistudio.google.com/apikey. **Server-only.**
-3. `npm run dev` — web on http://localhost:5173, agent server on http://localhost:8787
+3. Apply the database schema: open the Supabase dashboard → SQL Editor, paste the
+   contents of [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql),
+   and run it. This creates `tasks` and `notes` with Row-Level Security. (The REST
+   API can't run DDL, so this step is manual unless you use the Supabase CLI.)
+4. `npm run dev` — web on http://localhost:5173, agent server on http://localhost:8787
    (the Vite dev server proxies `/api/*` to it).
 
 The root `.env` is shared by both workspaces. Only `SUPABASE_URL` and
@@ -46,7 +50,7 @@ Providers → Email → disable "Confirm email".
 
 - [x] 1. Scaffold + Supabase connection
 - [x] 2. Auth (email sign-up / log-in)
-- [ ] 3. Data model + Kanban board (RLS)
+- [x] 3. Data model + Kanban board (RLS)
 - [ ] 4. BlockNote notes attached to tasks
 - [ ] 5. Agent end-to-end with one action (`write_note`) + confirmation gate
 - [ ] 6. Full tool set: `web_search`, `create_subtasks`, `draft_email`, `draft_document`

@@ -2,11 +2,12 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { useAuth } from './features/auth/useAuth'
 import { AuthForm } from './features/auth/AuthForm'
+import { Board } from './features/board/Board'
 import { ConnectionStatus } from './components/ConnectionStatus'
 
 function Workspace({ session }: { session: Session }) {
   return (
-    <main>
+    <main className="workspace">
       <header className="topbar">
         <div>
           <h1>Quark</h1>
@@ -20,14 +21,11 @@ function Workspace({ session }: { session: Session }) {
         </div>
       </header>
 
-      <section>
-        <h2>Milestone 2 — signed in</h2>
-        <p className="muted">
-          Your session persists across reloads and devices. Next: the tasks and notes tables with
-          row-level security, then the Kanban board.
-        </p>
+      <Board userId={session.user.id} />
+
+      <footer className="diagnostics">
         <ConnectionStatus />
-      </section>
+      </footer>
     </main>
   )
 }

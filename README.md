@@ -29,8 +29,31 @@ confirmation for side-effecting actions is enforced **in server code**, not by t
    contents of [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql),
    and run it. This creates `tasks` and `notes` with Row-Level Security. (The REST
    API can't run DDL, so this step is manual unless you use the Supabase CLI.)
-4. `npm run dev` — web on http://localhost:5173, agent server on http://localhost:8787
+4. `npm run dev` — web on http://127.0.0.1:5173, agent server on http://127.0.0.1:8787
    (the Vite dev server proxies `/api/*` to it).
+
+To build: **`node scripts/build.mjs`** (typechecks both workspaces, then bundles the
+web app). See the Windows notes below before reaching for `npm run build`.
+
+## Windows notes
+
+This repo works around three problems seen on the development machine. Don't
+"simplify" these back to the conventional commands without re-testing:
+
+- **`npm run` hangs for build-like scripts.** `npm run build` stalls partway
+  through and never writes `dist/`, even though the exact same command run as
+  `node scripts/build.mjs` finishes in a few seconds. Nested `npm run … -w
+  <workspace>` (npm spawning npm) hangs the same way, which is why the root
+  build script shells out to node directly instead of delegating to workspaces.
+- **The `vite` CLI dies silently** when launched through npm's `.bin` shim, so
+  Vite is started via its JS API in `web/dev.mjs` and `web/build.mjs`, with a
+  plain `vite.config.mjs` and `configLoader: 'native'` to skip config bundling.
+- **Only run one dev server at a time.** Two Vite instances sharing one cache
+  dir delete each other's `deps_temp_*` directories, which deadlocks the
+  dependency optimizer — the server then accepts connections but never
+  responds. `strictPort: true` makes a second instance fail loudly instead. If
+  the dev server ever hangs without responding, kill stray node processes and
+  delete `web/.vite-cache`.
 
 The root `.env` is shared by both workspaces. Only `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` are injected into the browser bundle (see `web/vite.config.ts`);

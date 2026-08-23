@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "node dev.mjs",
-    "build": "tsc --noEmit && node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node build.mjs",
     "preview": "vite preview --configLoader native"
   },
   "dependencies": {

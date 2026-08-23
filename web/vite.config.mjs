@@ -14,13 +14,25 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, repoRoot, '')
   return {
     plugins: [react()],
+    // Keep the dep-optimizer cache out of node_modules. On this machine writes
+    // under web/node_modules/.vite intermittently fail with EPERM/ENOENT (AV or
+    // indexer holding handles), which stalls the optimizer — and because Vite
+    // holds requests until it finishes, the dev server accepts connections but
+    // never responds.
+    cacheDir: '.vite-cache',
     define: {
       __SUPABASE_URL__: JSON.stringify(env.SUPABASE_URL ?? ''),
       __SUPABASE_ANON_KEY__: JSON.stringify(env.SUPABASE_ANON_KEY ?? ''),
     },
     server: {
+      // Pin to IPv4. Left to itself, Node may resolve "localhost" to ::1 and
+      // bind IPv6 only, which makes http://127.0.0.1:5173 refuse connections
+      // and the browser fail depending on its resolution order.
+      host: '127.0.0.1',
+      // Fail loudly instead of silently drifting to 5174 if the port is taken.
+      strictPort: true,
       proxy: {
-        '/api': 'http://localhost:8787',
+        '/api': 'http://127.0.0.1:8787',
       },
     },
   }

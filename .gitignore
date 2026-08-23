@@ -6,6 +6,7 @@
 # Dependencies / build output
 node_modules/
 dist/
+.vite-cache/
 *.tsbuildinfo
 
 # Logs & OS noise

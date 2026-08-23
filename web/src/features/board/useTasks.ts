@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PostgrestError } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import { POSITION_GAP, type Task, type TaskStatus } from './types'
@@ -17,6 +17,10 @@ export function useTasks(userId: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
   const [needsMigration, setNeedsMigration] = useState(false)
+  // Last position handed out per column. React state hasn't re-rendered yet when
+  // two tasks are added in the same tick, so without this they'd collide on one
+  // position and their order would be arbitrary.
+  const lastPosition = useRef<Record<TaskStatus, number>>({ todo: 0, doing: 0, done: 0 })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -45,9 +49,12 @@ export function useTasks(userId: string) {
       const trimmed = title.trim()
       if (!trimmed) return
 
-      // Append to the end of its column.
-      const last = tasks.filter((t) => t.status === status).at(-1)
-      const position = last ? last.position + POSITION_GAP : POSITION_GAP
+      // Append to the end of its column, past anything already handed out.
+      const columnMax = tasks
+        .filter((t) => t.status === status)
+        .reduce((max, t) => Math.max(max, t.position), 0)
+      const position = Math.max(columnMax, lastPosition.current[status]) + POSITION_GAP
+      lastPosition.current[status] = position
 
       // RLS also derives ownership, but the column is NOT NULL so we set it.
       const { data, error: insertError } = await supabase

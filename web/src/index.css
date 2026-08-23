@@ -260,7 +260,7 @@ main.workspace {
 }
 
 .drawer {
-  width: min(420px, 100%);
+  width: min(540px, 100%);
   height: 100%;
   overflow-y: auto;
   padding: 1.25rem;
@@ -308,9 +308,46 @@ main.workspace {
   resize: vertical;
 }
 
-.note-placeholder {
-  margin: 1rem 0 0;
-  font-style: italic;
+/* ── task note (BlockNote) ───────────────────────────────── */
+
+.note {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.note-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.note-label {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.save-state {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.save-state.error {
+  color: #f87171;
+  opacity: 1;
+}
+
+/* Give the editor a visible frame and room to grow inside the drawer. */
+.note .bn-container {
+  border: 1px solid rgb(128 128 128 / 0.35);
+  border-radius: 6px;
+  background: rgb(128 128 128 / 0.06);
+}
+
+.note .bn-editor {
+  padding: 0.6rem 0.75rem;
+  min-height: 9rem;
 }
 
 .drawer footer {

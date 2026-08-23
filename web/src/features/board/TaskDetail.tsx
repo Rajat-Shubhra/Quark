@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { COLUMNS, type Task, type TaskStatus } from './types'
+
+// BlockNote is heavy (~900kB) and only needed once a task is opened, so keep it
+// out of the initial bundle.
+const TaskNote = lazy(() => import('../notes/TaskNote').then((m) => ({ default: m.TaskNote })))
 
 type TaskDetailProps = {
   task: Task
@@ -22,7 +26,11 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Escape') return
+      // Inside the note, Escape belongs to BlockNote (dismissing its slash or
+      // formatting menu) — closing the whole drawer would be hostile.
+      if (document.activeElement?.closest('.note')) return
+      onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -76,9 +84,9 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           placeholder="What does done look like?"
         />
 
-        <p className="muted note-placeholder">
-          A BlockNote note attaches here in milestone 4, and the task agent in milestone 5.
-        </p>
+        <Suspense fallback={<p className="muted">Loading editor…</p>}>
+          <TaskNote taskId={task.id} userId={task.user_id} taskTitle={task.title} />
+        </Suspense>
 
         <footer>
           {confirmingDelete ? (

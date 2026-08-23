@@ -69,12 +69,22 @@ so sign-up shows a "check your inbox" notice rather than signing you straight in
 To turn that off while developing solo: Supabase dashboard → Authentication →
 Providers → Email → disable "Confirm email".
 
+## Notes
+
+Each task has one BlockNote document, stored as the block array in `notes.content`
+(jsonb). Edits autosave ~700ms after you stop typing, and anything still pending is
+flushed when the drawer closes. The row is created lazily on first edit, so opening a
+task you never write in doesn't leave an empty note behind.
+
+`@mantine/core` and `@mantine/hooks` are pinned to v8 deliberately: BlockNote's Mantine
+wrapper otherwise pulls Mantine v9, which requires React 19.
+
 ## Milestones
 
 - [x] 1. Scaffold + Supabase connection
 - [x] 2. Auth (email sign-up / log-in)
 - [x] 3. Data model + Kanban board (RLS)
-- [ ] 4. BlockNote notes attached to tasks
+- [x] 4. BlockNote notes attached to tasks
 - [ ] 5. Agent end-to-end with one action (`write_note`) + confirmation gate
 - [ ] 6. Full tool set: `web_search`, `create_subtasks`, `draft_email`, `draft_document`
 

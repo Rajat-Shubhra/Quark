@@ -16,7 +16,7 @@ export function useNote(taskId: string, userId: string, taskTitle: string) {
   const [loading, setLoading] = useState(true)
   const [saveState, setSaveState] = useState<SaveState>('idle')
 
-  const timer = useRef<number>()
+  const timer = useRef<number | undefined>(undefined)
   const pending = useRef<Block[] | null>(null)
 
   useEffect(() => {

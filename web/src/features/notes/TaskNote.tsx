@@ -63,7 +63,6 @@ export function TaskNote({
   return (
     <section className="note">
       <div className="note-header">
-        <span className="note-label">Note</span>
         <span className={`save-state ${saveState}`}>{SAVE_LABEL[saveState]}</span>
       </div>
 

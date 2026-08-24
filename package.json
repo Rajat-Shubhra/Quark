@@ -12,6 +12,6 @@
     "build": "node scripts/build.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^10.0.5"
   }
 }

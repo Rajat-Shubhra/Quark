@@ -5,12 +5,20 @@
 // the child starts, prints, and never exits — so everything here is spawned as
 // a plain node process instead. Same reasoning as web/dev.mjs.
 import { spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import path from 'node:path'
-import { build } from 'vite'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-const tsc = path.join(root, 'node_modules', 'typescript', 'bin', 'tsc')
+
+// Resolve both tools from the workspace that declares them — npm hoists to the
+// root sometimes and nests under web/ other times, so neither location is safe
+// to hardcode.
+const requireFromWeb = createRequire(path.join(root, 'web', 'package.json'))
+// TypeScript 7 doesn't expose ./bin/tsc through its exports map, so go via the
+// package.json (which is exported) and walk to the bin script.
+const tsc = path.join(path.dirname(requireFromWeb.resolve('typescript/package.json')), 'bin', 'tsc')
+const { build } = await import(pathToFileURL(requireFromWeb.resolve('vite')).href)
 
 function typecheck(workspace) {
   console.log(`> typechecking ${workspace}`)

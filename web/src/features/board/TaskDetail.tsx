@@ -66,18 +66,23 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           </button>
         </header>
 
-        <label htmlFor="task-title">Title</label>
+        {/* Title and description read as page furniture rather than form
+            fields — the note below is the main event. */}
         <input
           id="task-title"
+          className="page-title"
+          aria-label="Task title"
+          placeholder="Untitled task"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commit}
         />
 
-        <label htmlFor="task-description">Description</label>
         <textarea
           id="task-description"
-          rows={5}
+          className="page-subtitle"
+          aria-label="Task description"
+          rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={commit}

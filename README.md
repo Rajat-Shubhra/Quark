@@ -54,6 +54,14 @@ This repo works around three problems seen on the development machine. Don't
   responds. `strictPort: true` makes a second instance fail loudly instead. If
   the dev server ever hangs without responding, kill stray node processes and
   delete `web/.vite-cache`.
+- **A cold dev start takes ~20-25 seconds.** BlockNote and Mantine are a large
+  dependency graph, and Vite holds every request until pre-bundling finishes.
+  That silence is normal — wait 30s before assuming it's stuck.
+- **After changing dependencies, check for a duplicate React.** npm workspaces
+  can leave one copy at the repo root and another under `web/`, which makes
+  BlockNote and Mantine bind to a different React than the app and kills the
+  dev server with no error. `resolve.dedupe` guards against it; if it happens
+  anyway, delete every `node_modules` plus `package-lock.json` and reinstall.
 
 The root `.env` is shared by both workspaces. Only `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` are injected into the browser bundle (see `web/vite.config.ts`);
@@ -76,8 +84,9 @@ Each task has one BlockNote document, stored as the block array in `notes.conten
 flushed when the drawer closes. The row is created lazily on first edit, so opening a
 task you never write in doesn't leave an empty note behind.
 
-`@mantine/core` and `@mantine/hooks` are pinned to v8 deliberately: BlockNote's Mantine
-wrapper otherwise pulls Mantine v9, which requires React 19.
+The task drawer is laid out as a page rather than a form — the title is the heading,
+the description a subtitle, and the note fills the body. Type `/` in the note for the
+block menu (headings, lists, quotes, toggles).
 
 ## Milestones
 

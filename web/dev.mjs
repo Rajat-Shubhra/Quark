@@ -20,11 +20,25 @@ async function start() {
 try {
   await start()
 } catch (error) {
-  // Re-optimizing after a lockfile change fails with EPERM/ENOENT here when
-  // something still holds a handle on the old cache. Clearing it and retrying
-  // once beats leaving the server dead with a stack trace.
+  // After a dependency change Vite re-optimizes, which means deleting the old
+  // dep cache — and that intermittently fails with EPERM here when something
+  // still holds a handle on those files. Clearing and retrying fixes it when
+  // the holder is gone; when it isn't, say so plainly instead of dying on a
+  // stack trace, because the fix is to stop the process still holding it.
   if (error?.code !== 'EPERM' && error?.code !== 'ENOENT') throw error
-  console.warn(`[dev] ${error.code} on the Vite cache — clearing ${cacheDir} and retrying`)
-  await rm(cacheDir, { recursive: true, force: true })
-  await start()
+
+  console.warn(`[dev] ${error.code} on the Vite cache — clearing it and retrying once`)
+  await rm(cacheDir, { recursive: true, force: true }).catch(() => {})
+
+  try {
+    await start()
+  } catch (retryError) {
+    if (retryError?.code !== 'EPERM' && retryError?.code !== 'ENOENT') throw retryError
+    console.error(
+      `\n[dev] Vite's dep cache is still locked by another process.\n` +
+        `      Stop every node process for this repo, delete web/.vite-cache,\n` +
+        `      then run npm run dev again.\n`,
+    )
+    process.exit(1)
+  }
 }

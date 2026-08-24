@@ -20,6 +20,13 @@ export default defineConfig(({ mode }) => {
     // holds requests until it finishes, the dev server accepts connections but
     // never responds.
     cacheDir: '.vite-cache',
+    resolve: {
+      // Workspaces make it easy to end up with two copies of React (one hoisted
+      // to the repo root, one under web/). When that happens BlockNote and
+      // Mantine bind to a different React than the app, hooks break, and the
+      // dev server stops responding. Pin every import to one copy.
+      dedupe: ['react', 'react-dom'],
+    },
     define: {
       __SUPABASE_URL__: JSON.stringify(env.SUPABASE_URL ?? ''),
       __SUPABASE_ANON_KEY__: JSON.stringify(env.SUPABASE_ANON_KEY ?? ''),

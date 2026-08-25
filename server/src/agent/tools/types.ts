@@ -15,5 +15,12 @@ export type Tool = {
    * the server, not the model — see runner.ts.
    */
   requiresConfirmation(input: unknown, ctx: ToolContext): Promise<boolean>
+  /**
+   * Plain-language description of what running this would do, used when the
+   * server gates a run the model didn't expect to be gated (and so left
+   * confirmation_prompt empty). The user must never be asked to approve
+   * something unexplained.
+   */
+  describeConsequence(input: unknown, ctx: ToolContext): Promise<string>
   execute(input: unknown, ctx: ToolContext): Promise<string>
 }

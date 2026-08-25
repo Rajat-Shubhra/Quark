@@ -68,6 +68,21 @@ async function needsConfirmation(
   return false
 }
 
+/** Plain-language summary of what's waiting behind the gate. */
+async function describeActions(actions: AgentAction[], ctx: ToolContext): Promise<string> {
+  const descriptions: string[] = []
+  for (const action of actions) {
+    const tool = TOOLS[action.tool]
+    if (!tool) continue
+    try {
+      descriptions.push(await tool.describeConsequence(action.input, ctx))
+    } catch {
+      descriptions.push(`Run ${action.tool} on this task.`)
+    }
+  }
+  return descriptions.join(' ') || 'The agent wants to make a change to this task.'
+}
+
 async function executeActions(actions: AgentAction[], ctx: ToolContext): Promise<ExecutedAction[]> {
   const executed: ExecutedAction[] = []
 
@@ -151,11 +166,19 @@ export async function startRun({
     if (await needsConfirmation(response, runnable, ctx)) {
       // Park the actions. Nothing has run at this point, and nothing will
       // until /confirm is called.
+      const gated: AgentResponse = {
+        ...response,
+        // The model leaves this blank when the gate was the server's decision,
+        // so fill it from the tools themselves rather than asking the user to
+        // approve something we haven't described.
+        confirmation_prompt: response.confirmation_prompt.trim() || (await describeActions(runnable, ctx)),
+      }
+
       const { data } = await supabase
         .from('agent_runs')
         .update({
           status: 'awaiting_confirmation',
-          response,
+          response: gated,
           pending_actions: runnable,
           executed_actions: rejected,
         })

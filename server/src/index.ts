@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { env } from './env'
+import { agentRoutes } from './routes/agent'
 
 const app = new Hono()
 
@@ -18,6 +19,8 @@ app.get('/api/health', async (c) => {
   }
   return c.json({ ok: supabaseStatus === 'connected', supabase: supabaseStatus })
 })
+
+app.route('/api/agent', agentRoutes)
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   console.log(`Quark agent server listening on http://localhost:${info.port}`)

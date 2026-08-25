@@ -25,10 +25,11 @@ confirmation for side-effecting actions is enforced **in server code**, not by t
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase
      dashboard → Project Settings → API. The service-role key is **server-only**.
    - `GEMINI_API_KEY` — https://aistudio.google.com/apikey. **Server-only.**
-3. Apply the database schema: open the Supabase dashboard → SQL Editor, paste the
-   contents of [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql),
-   and run it. This creates `tasks` and `notes` with Row-Level Security. (The REST
-   API can't run DDL, so this step is manual unless you use the Supabase CLI.)
+3. Apply the database schema: open the Supabase dashboard → SQL Editor and run each
+   file in [supabase/migrations](supabase/migrations) in order —
+   `0001_init.sql` (tasks + notes) then `0002_agent_runs.sql` (agent runs +
+   artifacts). Both set up Row-Level Security. (The REST API can't run DDL, so this
+   step is manual unless you use the Supabase CLI.)
 4. `npm run dev` — web on http://127.0.0.1:5173, agent server on http://127.0.0.1:8787
    (the Vite dev server proxies `/api/*` to it).
 
@@ -88,13 +89,39 @@ The task drawer is laid out as a page rather than a form — the title is the he
 the description a subtitle, and the note fills the body. Type `/` in the note for the
 block menu (headings, lists, quotes, toggles).
 
+## The agent
+
+Open a task and press **Ask the agent**. It classifies the task against the tools it
+actually has and the UI renders one of three states from the returned JSON:
+
+- **CAN_DO** — it finished the work using its tools.
+- **PARTIAL** — it did its part (drafting, structuring, planning) and lists what only
+  you can do.
+- **HUMAN_ONLY** — it can't act, so it gives the shortest concrete guide.
+
+**The confirmation gate is enforced in `server/src/agent/runner.ts`, not by the
+model.** A run is gated if the model asks for confirmation *or* if any tool reports
+that this particular call has real consequences — currently, overwriting a note you
+have already written in. A run sitting in `awaiting_confirmation` has executed
+nothing; its actions live in `pending_actions` and only ever run through
+`POST /api/agent/runs/:id/confirm`. A model returning `confirmation_required: false`
+cannot talk its way past a side effect.
+
+Requests are authenticated with the user's Supabase access token and every database
+operation runs through a client carrying that token, so RLS still applies — the
+service-role key is never used to serve a request.
+
+The tool set is deliberately just `write_note` for now; the agent is told that is all
+it has, so it classifies honestly rather than promising things it cannot do. The
+remaining four tools land in milestone 6.
+
 ## Milestones
 
 - [x] 1. Scaffold + Supabase connection
 - [x] 2. Auth (email sign-up / log-in)
 - [x] 3. Data model + Kanban board (RLS)
 - [x] 4. BlockNote notes attached to tasks
-- [ ] 5. Agent end-to-end with one action (`write_note`) + confirmation gate
+- [x] 5. Agent end-to-end with one action (`write_note`) + confirmation gate
 - [ ] 6. Full tool set: `web_search`, `create_subtasks`, `draft_email`, `draft_document`
 
 ## Not in v1 (TODOs, deliberately unbuilt)

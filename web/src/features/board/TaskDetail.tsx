@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
+import { AgentPanel } from '../agent/AgentPanel'
 import { COLUMNS, type Task, type TaskStatus } from './types'
 
 // BlockNote is heavy (~900kB) and only needed once a task is opened, so keep it
@@ -16,6 +17,9 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  // Bumped when the agent writes the note, to remount the editor on the new
+  // content rather than leaving the user looking at a stale document.
+  const [noteVersion, setNoteVersion] = useState(0)
 
   // Switching to a different task while the panel is open.
   useEffect(() => {
@@ -89,8 +93,15 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           placeholder="What does done look like?"
         />
 
+        <AgentPanel taskId={task.id} onNoteChanged={() => setNoteVersion((v) => v + 1)} />
+
         <Suspense fallback={<p className="muted">Loading editor…</p>}>
-          <TaskNote taskId={task.id} userId={task.user_id} taskTitle={task.title} />
+          <TaskNote
+            key={`${task.id}:${noteVersion}`}
+            taskId={task.id}
+            userId={task.user_id}
+            taskTitle={task.title}
+          />
         </Suspense>
 
         <footer>

@@ -20,6 +20,8 @@ export const env = {
   SUPABASE_ANON_KEY: required('SUPABASE_ANON_KEY'),
   SUPABASE_SERVICE_ROLE_KEY: required('SUPABASE_SERVICE_ROLE_KEY'),
   GEMINI_API_KEY: required('GEMINI_API_KEY'),
+  // gemini-2.5-flash is no longer offered to new API keys.
+  GEMINI_MODEL: process.env.GEMINI_MODEL ?? 'gemini-3.6-flash',
   // Deliberately not the generic PORT — dev tooling injects that for the web app.
   PORT: Number(process.env.AGENT_PORT ?? 8787),
 }

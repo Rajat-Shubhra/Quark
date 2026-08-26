@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { SYSTEM_PROMPT, buildUserMessage, type TaskContext } from './prompt'
 import { parseAgentResponse, type AgentAction, type AgentResponse } from './schema'
 import { geminiProvider, type AgentProvider } from './provider'
-import { TOOLS, type ToolContext } from './tools/index'
+import { READ_ONLY_TOOLS, TOOLS, type ToolContext } from './tools/index'
 
 export type ExecutedAction = {
   tool: string
@@ -145,22 +145,70 @@ export async function startRun({
     return data as AgentRun
   }
 
-  let response: AgentResponse
-  try {
-    const raw = await provider.complete(SYSTEM_PROMPT, buildUserMessage(task))
-    response = parseAgentResponse(raw)
-  } catch (error) {
-    return fail(error instanceof Error ? error.message : String(error))
-  }
-
   const ctx: ToolContext = {
     supabase,
     userId,
     taskId: task.id,
     taskTitle: task.title,
+    runId,
   }
 
-  const { runnable, rejected } = partitionActions(response.actions_taken)
+  const userMessage = buildUserMessage(task)
+  let response: AgentResponse
+  // Searches run before the gate and are reported separately, since they
+  // happen during the model's own reasoning rather than as a result of it.
+  let researchActions: ExecutedAction[] = []
+
+  try {
+    response = parseAgentResponse(await provider.complete(SYSTEM_PROMPT, userMessage))
+
+    // A single-shot answer can't use information it asked for. When the agent
+    // requests read-only research, run it and give it a second turn with the
+    // results — otherwise it would write its note before seeing them.
+    const research = response.actions_taken.filter(
+      (action) => READ_ONLY_TOOLS.has(action.tool) && TOOLS[action.tool],
+    )
+
+    if (research.length > 0) {
+      researchActions = await executeActions(research, ctx)
+
+      const findings = researchActions
+        .map((action) =>
+          action.ok
+            ? `${action.tool}(${JSON.stringify(action.input)}) returned:\n${action.result}`
+            : `${action.tool}(${JSON.stringify(action.input)}) FAILED: ${action.result}`,
+        )
+        .join('\n\n')
+
+      // If the search failed, the agent must not dress up remembered facts as
+      // verified ones — that is exactly the fabrication the prompt forbids.
+      const anyFailed = researchActions.some((action) => !action.ok)
+      const honesty = anyFailed
+        ? '\n\nAt least one search FAILED, so you do NOT have current information. ' +
+          'Do not present remembered facts as verified or current. Say plainly in ' +
+          'result_summary that the search did not run, and treat anything depending on ' +
+          'current facts as work the human must confirm.'
+        : ''
+
+      response = parseAgentResponse(
+        await provider.complete(
+          SYSTEM_PROMPT,
+          `${userMessage}\n\nYou requested research, and here is what came back:\n"""\n${findings}\n"""\n\n` +
+            'Now give your final answer. Do not request web_search again — use these ' +
+            'results. Report the search you already did in actions_taken.' +
+            honesty,
+        ),
+      )
+    }
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error))
+  }
+
+  // Any further search requests are dropped: the research round is over, and
+  // running them again would loop.
+  const { runnable, rejected } = partitionActions(
+    response.actions_taken.filter((action) => !READ_ONLY_TOOLS.has(action.tool)),
+  )
 
   try {
     if (await needsConfirmation(response, runnable, ctx)) {
@@ -180,7 +228,8 @@ export async function startRun({
           status: 'awaiting_confirmation',
           response: gated,
           pending_actions: runnable,
-          executed_actions: rejected,
+          // Research already happened; only the gated actions are held back.
+          executed_actions: [...researchActions, ...rejected],
         })
         .eq('id', runId)
         .select()
@@ -195,7 +244,7 @@ export async function startRun({
         status: 'done',
         response,
         pending_actions: [],
-        executed_actions: [...rejected, ...executed],
+        executed_actions: [...researchActions, ...rejected, ...executed],
         resolved_at: new Date().toISOString(),
       })
       .eq('id', runId)
@@ -251,6 +300,7 @@ export async function resolveRun({
     userId,
     taskId: run.task_id as string,
     taskTitle: (run.tasks as { title?: string } | null)?.title ?? '',
+    runId,
   }
 
   const executed = await executeActions((run.pending_actions ?? []) as AgentAction[], ctx)

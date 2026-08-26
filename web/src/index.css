@@ -471,6 +471,109 @@ main.workspace {
   margin: 0.5rem 0 0;
 }
 
+/* ── drafts the agent produced ───────────────────────────── */
+
+.artifact {
+  border: 1px solid rgb(128 128 128 / 0.3);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.artifact summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.artifact-kind {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgb(96 165 250 / 0.2);
+  color: #60a5fa;
+}
+
+.artifact-meta {
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.artifact pre {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem;
+  border-radius: 6px;
+  background: rgb(128 128 128 / 0.12);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+/* ── subtasks ────────────────────────────────────────────── */
+
+.subtasks {
+  margin-top: 1.25rem;
+}
+
+.subtasks h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.subtasks .count {
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+.subtasks ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.subtasks li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+}
+
+.subtasks label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.subtasks .done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+button.link {
+  border: none;
+  background: none;
+  padding: 0.1rem 0.3rem;
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+button.link:hover {
+  opacity: 1;
+}
+
 /* ── task note (BlockNote) ───────────────────────────────── */
 
 .note {

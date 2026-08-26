@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { AgentPanel } from '../agent/AgentPanel'
+import { Artifacts } from '../agent/Artifacts'
 import { COLUMNS, type Task, type TaskStatus } from './types'
 
 // BlockNote is heavy (~900kB) and only needed once a task is opened, so keep it
@@ -8,18 +9,39 @@ const TaskNote = lazy(() => import('../notes/TaskNote').then((m) => ({ default: 
 
 type TaskDetailProps = {
   task: Task
+  /** Children of this task — created by the agent's create_subtasks tool. */
+  subtasks: Task[]
   onClose: () => void
   onUpdate: (id: string, patch: Partial<Task>) => void
   onDelete: (id: string) => void
+  /** Reload the board, e.g. after the agent adds subtasks. */
+  onTasksChanged: () => void
 }
 
-export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProps) {
+export function TaskDetail({
+  task,
+  subtasks,
+  onClose,
+  onUpdate,
+  onDelete,
+  onTasksChanged,
+}: TaskDetailProps) {
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   // Bumped when the agent writes the note, to remount the editor on the new
   // content rather than leaving the user looking at a stale document.
   const [noteVersion, setNoteVersion] = useState(0)
+  const [artifactsVersion, setArtifactsVersion] = useState(0)
+
+  /** Refresh only what the agent actually touched. */
+  function handleActionsExecuted(tools: string[]) {
+    if (tools.includes('write_note')) setNoteVersion((v) => v + 1)
+    if (tools.includes('draft_email') || tools.includes('draft_document')) {
+      setArtifactsVersion((v) => v + 1)
+    }
+    if (tools.includes('create_subtasks')) onTasksChanged()
+  }
 
   // Switching to a different task while the panel is open.
   useEffect(() => {
@@ -93,7 +115,43 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           placeholder="What does done look like?"
         />
 
-        <AgentPanel taskId={task.id} onNoteChanged={() => setNoteVersion((v) => v + 1)} />
+        <AgentPanel taskId={task.id} onActionsExecuted={handleActionsExecuted} />
+
+        <Artifacts taskId={task.id} version={artifactsVersion} />
+
+        {subtasks.length > 0 && (
+          <div className="subtasks">
+            <h4>
+              Subtasks <span className="count">{subtasks.filter((s) => s.status === 'done').length}/{subtasks.length}</span>
+            </h4>
+            <ul>
+              {subtasks.map((subtask) => (
+                <li key={subtask.id}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={subtask.status === 'done'}
+                      onChange={(e) =>
+                        onUpdate(subtask.id, { status: e.target.checked ? 'done' : 'todo' })
+                      }
+                    />
+                    <span className={subtask.status === 'done' ? 'done' : undefined}>
+                      {subtask.title}
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() => onDelete(subtask.id)}
+                    aria-label={`Delete subtask ${subtask.title}`}
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <Suspense fallback={<p className="muted">Loading editor…</p>}>
           <TaskNote

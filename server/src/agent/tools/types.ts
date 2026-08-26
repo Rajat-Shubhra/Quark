@@ -6,6 +6,8 @@ export type ToolContext = {
   userId: string
   taskId: string
   taskTitle: string
+  /** The run these actions belong to — artifacts are filed against it. */
+  runId: string
 }
 
 export type Tool = {

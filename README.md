@@ -111,9 +111,28 @@ Requests are authenticated with the user's Supabase access token and every datab
 operation runs through a client carrying that token, so RLS still applies — the
 service-role key is never used to serve a request.
 
-The tool set is deliberately just `write_note` for now; the agent is told that is all
-it has, so it classifies honestly rather than promising things it cannot do. The
-remaining four tools land in milestone 6.
+### Tools
+
+Five, and the agent is told these are all it has, so it classifies honestly rather
+than promising things it cannot do:
+
+| Tool | What it does | Gated? |
+| --- | --- | --- |
+| `web_search` | Searches via Gemini's Google Search grounding | No — read-only |
+| `write_note` | Replaces the task's note | **Yes**, if the note already has content |
+| `create_subtasks` | Adds subtasks under the task | No — additive and easy to undo |
+| `draft_email` | Saves an email draft | No — **there is no send path in the codebase** |
+| `draft_document` | Saves a document draft | No |
+
+The gate is for **destructive or outward-facing** actions. Adding a subtask or saving
+a draft is neither, so demanding approval for those would only train you to click
+through it. If sending email is ever added, it belongs behind the gate.
+
+Research runs in two turns: read-only searches execute first, and the results are fed
+back so the agent writes its answer knowing them — a single-shot reply can't use
+information it just asked for. If a search fails (grounding has a small free-tier
+quota, separate from ordinary generation), the agent is told so explicitly and must
+not pass remembered facts off as current.
 
 ## Milestones
 
@@ -122,7 +141,7 @@ remaining four tools land in milestone 6.
 - [x] 3. Data model + Kanban board (RLS)
 - [x] 4. BlockNote notes attached to tasks
 - [x] 5. Agent end-to-end with one action (`write_note`) + confirmation gate
-- [ ] 6. Full tool set: `web_search`, `create_subtasks`, `draft_email`, `draft_document`
+- [x] 6. Full tool set: `web_search`, `create_subtasks`, `draft_email`, `draft_document`
 
 ## Not in v1 (TODOs, deliberately unbuilt)
 

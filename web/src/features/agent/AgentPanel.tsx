@@ -128,18 +128,29 @@ function RunView({
   )
 }
 
-export function AgentPanel({ taskId, onNoteChanged }: { taskId: string; onNoteChanged: () => void }) {
+export function AgentPanel({
+  taskId,
+  onActionsExecuted,
+}: {
+  taskId: string
+  /** Which tools actually ran, so the surrounding UI can refresh what changed. */
+  onActionsExecuted: (tools: string[]) => void
+}) {
   const { run, loading, busy, error, start, resolve } = useAgentRun(taskId)
 
-  const wroteNote = (candidate: AgentRun | null) =>
-    candidate?.executed_actions.some((action) => action.tool === 'write_note' && action.ok) ?? false
+  const report = (candidate: AgentRun | null) => {
+    const tools = (candidate?.executed_actions ?? [])
+      .filter((action) => action.ok)
+      .map((action) => action.tool)
+    if (tools.length > 0) onActionsExecuted(tools)
+  }
 
   async function handleStart() {
-    if (wroteNote(await start())) onNoteChanged()
+    report(await start())
   }
 
   async function handleResolve(approve: boolean) {
-    if (wroteNote(await resolve(approve))) onNoteChanged()
+    report(await resolve(approve))
   }
 
   return (

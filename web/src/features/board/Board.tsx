@@ -131,6 +131,10 @@ export function Board({ userId }: { userId: string }) {
       {openTask && (
         <TaskDetail
           task={openTask}
+          subtasks={tasks
+            .filter((t) => t.parent_id === openTask.id)
+            .sort((a, b) => a.position - b.position)}
+          onTasksChanged={() => void reload()}
           onClose={() => setOpenTaskId(null)}
           onUpdate={updateTask}
           onDelete={(id) => {

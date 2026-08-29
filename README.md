@@ -80,8 +80,10 @@ Providers → Email → disable "Confirm email".
 
 ## Notes
 
-Each task has one BlockNote document, stored as the block array in `notes.content`
-(jsonb). Edits autosave ~700ms after you stop typing, and anything still pending is
+Two kinds, both BlockNote documents in the same `notes` table. **Task notes** hang off
+a task (`task_id` set, unique — one per task). **Standalone pages** are rows with
+`task_id` null, listed under the **Notes** tab beside the board: create, rename,
+write, delete. Edits autosave ~700ms after you stop typing, and anything still pending is
 flushed when the drawer closes. The row is created lazily on first edit, so opening a
 task you never write in doesn't leave an empty note behind.
 

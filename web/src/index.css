@@ -141,6 +141,114 @@ button:disabled {
   color: #4ade80;
 }
 
+/* ── view switcher ───────────────────────────────────────── */
+
+.views {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 1.25rem;
+  border-bottom: 1px solid rgb(128 128 128 / 0.25);
+}
+
+.views button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.45rem 0.85rem;
+  opacity: 0.6;
+}
+
+.views button.active {
+  opacity: 1;
+  font-weight: 600;
+  border-bottom-color: #2563eb;
+}
+
+/* ── standalone note pages ───────────────────────────────── */
+
+.pages {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 760px) {
+  .pages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.page-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.page-list-header h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.page-list ul {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.page-list li button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.page-list li button.active {
+  background: rgb(37 99 235 / 0.15);
+}
+
+/* Not .page-title — that's the task drawer's heading, and the names collided. */
+.page-name {
+  font-size: 0.92rem;
+}
+
+.page-date {
+  font-size: 0.72rem;
+  opacity: 0.55;
+}
+
+.page-body-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.page-title-input {
+  flex: 1;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.page-title-input:focus {
+  outline: none;
+}
+
 /* ── board ───────────────────────────────────────────────── */
 
 main.workspace {

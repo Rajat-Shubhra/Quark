@@ -111,6 +111,17 @@ export const draftDocument: Tool = {
     const { title, content } = parseInput(input)
     if (!content) throw new Error('draft_document needs content')
 
+    // A single short line with no title is a heading, not a document. Saving it
+    // would look like the work was done when nothing was written, so fail
+    // loudly and let the run record that.
+    const looksLikeBareTitle = !title && content.length < 200 && !content.includes('\n')
+    if (looksLikeBareTitle) {
+      throw new Error(
+        'draft_document was given only a title, not a document. Pass ' +
+          '{"title": "...", "content": "the full text"} — nothing was saved.',
+      )
+    }
+
     await saveArtifact(ctx, 'document', { title: title || 'Untitled', content })
     return `Drafted "${title || 'Untitled'}" (${content.length} characters).`
   },
